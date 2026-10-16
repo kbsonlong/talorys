@@ -205,6 +205,7 @@ export async function install(opts: InstallOptions, deps: Deps): Promise<Manifes
   const missingSecrets = REQUIRED_SECRETS.filter((s) => !existingSecrets.includes(s));
   // Existing push keys are kept: replacing them would silently disconnect every subscribed device.
   const needsPushKeys = PUSH_SECRETS.some((s) => !existingSecrets.includes(s));
+  const needsModelDiscoveryToken = !!process.env.CLOUDFLARE_API_TOKEN && !existingSecrets.includes("CLOUDFLARE_API_TOKEN");
   const password = missingSecrets.includes(PASSWORD_SECRET) ? await askPassword(ui, opts.password) : null;
 
   if (!opts.yes && ui.interactive) {
@@ -261,6 +262,7 @@ export async function install(opts: InstallOptions, deps: Deps): Promise<Manifes
           version: template.version,
           timezone,
           agentName,
+          accountId: account.id,
           semanticDefault,
         },
         templates,
@@ -288,13 +290,18 @@ export async function install(opts: InstallOptions, deps: Deps): Promise<Manifes
       await ui.step("Configuring authentication", async () => {
         const secrets = await buildOwnerSecrets(password ?? "", { includeSessionSecret: missingSecrets.includes(SESSION_SECRET) });
         if (!missingSecrets.includes(PASSWORD_SECRET)) delete secrets[PASSWORD_SECRET];
+        if (process.env.CLOUDFLARE_API_TOKEN) secrets.CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
         await wrangler.putSecrets(names.workerName, { ...secrets, ...pushKeys });
       }, () => "Authentication configured (password hashed locally; secrets stored as Cloudflare secrets)");
     } else {
       ui.success("Authentication already configured — owner password unchanged");
-      if (needsPushKeys) {
-        await ui.step("Configuring push notifications", () => wrangler.putSecrets(names.workerName, pushKeys),
-          () => "Push notification keys created (stored as Cloudflare secrets)");
+      if (needsPushKeys || needsModelDiscoveryToken) {
+        const optionalSecrets = {
+          ...pushKeys,
+          ...(process.env.CLOUDFLARE_API_TOKEN ? { CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN } : {}),
+        };
+        await ui.step("Configuring optional integrations", () => wrangler.putSecrets(names.workerName, optionalSecrets),
+          () => "Optional integration secrets stored in Cloudflare");
       }
     }
     manifest = markStep(dir, manifest, "secrets");

@@ -8,12 +8,13 @@ import { SemanticRecallCard } from "../components/SemanticRecallCard";
 import { PushNotificationsCard } from "../components/PushNotificationsCard";
 import { RemoteAccessCard } from "../components/RemoteAccessCard";
 import { UsageBreakdown, UsagePricingNote } from "../components/UsageBreakdown";
-import { keys, useApiMutation, useSessions, useSettings, useSystemInfo, useUpdateStatus, useUsage } from "../hooks/queries";
+import { keys, useApiMutation, useSessions, useSettings, useSystemInfo, useUpdateStatus, useUsage, useWorkersAIModels } from "../hooks/queries";
 import { useSession } from "../hooks/session";
 import { useToast, errorMessage } from "../hooks/toast";
 import { api, ApiError } from "../lib/api";
 import { applyTheme } from "../lib/theme";
 import { cn, relativeTime } from "../lib/utils";
+import { useI18n, useT } from "../lib/i18n";
 
 const TABS = ["General", "AI", "Privacy", "Security", "About"] as const;
 type Tab = (typeof TABS)[number];
@@ -47,22 +48,23 @@ export default function SettingsPage() {
   const tab: Tab = TABS.find((t) => t === param) ?? "General";
   const setTab = (t: Tab) => setSearchParams(t === "General" ? {} : { tab: t }, { replace: true });
   const { data: settings, isLoading, error, refetch } = useSettings();
+  const t = useT();
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-8">
-      <PageHeader title="Settings" />
+      <PageHeader title={t("Settings")} />
       <div className="mb-6 flex gap-1 overflow-x-auto border-b border-border" role="tablist">
-        {TABS.map((t) => (
+        {TABS.map((tabName) => (
           <button type="button"
-            key={t}
+            key={tabName}
             role="tab"
-            aria-selected={tab === t}
-            onClick={() => setTab(t)}
+            aria-selected={tab === tabName}
+            onClick={() => setTab(tabName)}
             className={cn(
               "-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors",
-              tab === t ? "border-accent text-fg" : "border-transparent text-fg-muted hover:text-fg",
+              tab === tabName ? "border-accent text-fg" : "border-transparent text-fg-muted hover:text-fg",
             )}
           >
-            {t}
+            {t(tabName)}
           </button>
         ))}
       </div>
@@ -102,12 +104,14 @@ function useSaveSettings() {
 
 function GeneralTab({ settings }: { settings: Settings }) {
   const save = useSaveSettings();
+  const { preference, setPreference } = useI18n();
+  const t = useT();
   const [name, setName] = useState(settings.agentName);
   const zones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [settings.timezone];
   const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   return (
-    <Section title="General">
-      <Row label="Agent name" hint="How your assistant introduces itself.">
+    <Section title={t("General")}>
+      <Row label={t("Agent name")} hint={t("How your assistant introduces itself.")}>
         <form
           className="flex gap-2"
           onSubmit={(e) => {
@@ -121,8 +125,7 @@ function GeneralTab({ settings }: { settings: Settings }) {
           </Button>
         </form>
       </Row>
-      <Row
-        label="Timezone"
+      <Row label={t("Timezone")}
         hint={
           settings.timezone !== browserTz ? (
             <button type="button" className="text-accent underline-offset-2 hover:underline" onClick={() => save.mutate({ timezone: browserTz })}>
@@ -141,7 +144,22 @@ function GeneralTab({ settings }: { settings: Settings }) {
           ))}
         </Select>
       </Row>
-      <Row label="Theme">
+      <Row label={t("Language")} hint={t("Choose the language used by the interface.")}>
+        <Select
+          value={preference}
+          onChange={(e) => {
+            const value = e.target.value as "system" | "en" | "zh-CN";
+            setPreference(value);
+            save.mutate({ language: value });
+          }}
+          aria-label={t("Language")}
+        >
+          <option value="system">{t("System default")}</option>
+          <option value="en">English</option>
+          <option value="zh-CN">中文</option>
+        </Select>
+      </Row>
+      <Row label={t("Theme")}>
         <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
           {(
             [
@@ -182,6 +200,8 @@ const LIMIT_FIELDS: { key: keyof Limits; label: string; hint: string }[] = [
 
 function AiTab({ settings }: { settings: Settings }) {
   const save = useSaveSettings();
+  const models = useWorkersAIModels();
+  const t = useT();
   const usage = useUsage();
   const [model, setModel] = useState(settings.model);
   const [limits, setLimits] = useState<Limits>(settings.limits);
@@ -189,20 +209,23 @@ function AiTab({ settings }: { settings: Settings }) {
   const dirtyLimits = JSON.stringify(limits) !== JSON.stringify(settings.limits) || temperature !== settings.temperature;
   return (
     <>
-      <Section title="Model">
-        <Row label="Workers AI model" hint="Default: @cf/zai-org/glm-4.7-flash. Must support tool calling.">
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (model !== settings.model) save.mutate({ model: model.trim() });
-            }}
-          >
-            <Input value={model} onChange={(e) => setModel(e.target.value)} aria-label="Model id" className="font-mono text-xs" />
-            <Button type="submit" variant="outline" disabled={model === settings.model}>
-              Save
-            </Button>
-          </form>
+      <Section title={t("Model")}>
+        <Row label={t("Workers AI model")} hint={t("Choose a Cloudflare-hosted text-generation model available to your account.")}>
+          <div className="space-y-2">
+            <Select value={model} onChange={(e) => setModel(e.target.value)} aria-label={t("Workers AI model")}>
+              {model && !(models.data?.models.some((item) => item.id === model) ?? false) && <option value={model}>{model} ({t("currently configured")})</option>}
+              {(models.data?.models ?? []).map((item) => (
+                <option key={item.id} value={item.id}>{item.name} · {item.id}</option>
+              ))}
+            </Select>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-fg-subtle">
+                {models.isLoading ? t("Loading models…") : models.data?.source === "cloudflare" ? t("Cloudflare model catalog") : t("Built-in recommended models")}
+              </p>
+              {model !== settings.model && <Button variant="outline" size="sm" onClick={() => save.mutate({ model })}>{t("Save")}</Button>}
+            </div>
+            {(models.data?.warning || models.error) && <p className="text-xs text-warning">{t("Model discovery unavailable; showing built-in models.")}</p>}
+          </div>
         </Row>
         <Row label="Learn from conversations" hint="Let Talorys save clearly lasting preferences without being asked. Off = only explicit “remember …”.">
           <div className="flex justify-end">
@@ -216,8 +239,8 @@ function AiTab({ settings }: { settings: Settings }) {
         </Row>
       </Section>
 
-      <Section title="Generation & execution limits">
-        <Row label="Temperature" hint="Lower is more focused and predictable.">
+      <Section title={t("Generation & execution limits")}>
+        <Row label={t("Temperature")} hint={t("Lower is more focused and predictable.")}>
           <div className="flex items-center gap-3">
             <input type="range" min={0} max={1.5} step={0.1} value={temperature} onChange={(e) => setTemperature(Number(e.target.value))} className="flex-1 accent-[var(--accent)]" aria-label="Temperature" />
             <span className="w-8 text-right text-sm tabular-nums">{temperature.toFixed(1)}</span>

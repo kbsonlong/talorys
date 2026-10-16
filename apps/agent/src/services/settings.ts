@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS: Settings = {
   agentName: "Talorys",
   timezone: "UTC",
   theme: "system",
+  language: "system",
   model: DEFAULT_MODEL,
   temperature: 0.4,
   limits: { ...DEFAULT_LIMITS },
@@ -30,6 +31,7 @@ export class SettingsService {
     const stored = this.getJson<Partial<Settings>>(SETTINGS_KEY) ?? {};
     const merged = {
       ...DEFAULT_SETTINGS,
+      language: "system" as const,
       ...this.defaults,
       ...stored,
       limits: { ...DEFAULT_SETTINGS.limits, ...(stored.limits ?? {}) },

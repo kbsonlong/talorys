@@ -200,6 +200,14 @@ describe("settings, usage, export and import", () => {
     await c.json("/api/settings", { method: "PATCH", body: { agentName: "Talorys", timezone: "UTC" } });
   });
 
+  it("lists built-in Workers AI chat models when Cloudflare discovery credentials are absent", async () => {
+    const c = await loggedIn();
+    const models = await c.json("/api/ai/models");
+    expect(models.source).toBe("fallback");
+    expect(models.models.length).toBeGreaterThan(0);
+    expect(models.models.every((m: { id: string; task?: string }) => m.id.startsWith("@cf/") && m.task === "Text Generation")).toBe(true);
+  });
+
   it("reports local usage estimates and clearly labels them", async () => {
     const usage = await (await loggedIn()).json("/api/usage");
     expect(usage.note).toMatch(/estimates/i);

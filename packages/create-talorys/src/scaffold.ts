@@ -43,6 +43,7 @@ export interface ScaffoldInput {
   version: string;
   timezone: string;
   agentName: string;
+  accountId?: string;
   semanticDefault?: boolean;
 }
 
@@ -71,6 +72,7 @@ export function scaffoldProject(input: ScaffoldInput, templates = templatesDir()
         version: input.version,
         timezone: input.timezone,
         agentName: input.agentName,
+        accountId: input.accountId,
         semanticDefault: input.semanticDefault,
       }),
     ),

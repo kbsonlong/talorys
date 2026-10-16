@@ -319,6 +319,7 @@ export const settingsSchema = z.object({
   agentName: shortText(60),
   timezone: z.string().refine(isValidTimeZone, "Unknown IANA timezone"),
   theme: z.enum(["system", "light", "dark"]),
+  language: z.enum(["system", "en", "zh-CN"]),
   model: z.string().regex(/^@(cf|hf)\/[\w.\-/]+$/, "Must be a Workers AI model id"),
   temperature: z.number().min(0).max(1.5),
   limits: limitsSchema,

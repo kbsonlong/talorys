@@ -34,6 +34,7 @@ export const keys = {
   usage: ["usage"] as const,
   sessions: ["sessions"] as const,
   system: ["system"] as const,
+  models: ["ai", "models"] as const,
   update: ["system", "update"] as const,
   remoteStatus: ["remote", "status"] as const,
   remoteTokens: ["remote", "tokens"] as const,
@@ -150,6 +151,23 @@ export function useSystemInfo() {
     queryKey: keys.system,
     queryFn: () =>
       api<{ version: string; deployed_version: string | null; installation_id: string | null; schema_version: number; ai_binding: boolean; ai_provider: string; environment: string }>("/system"),
+  });
+}
+
+export interface WorkersAIModel {
+  id: string;
+  name: string;
+  description?: string;
+  task?: string;
+  source: "cloudflare" | "fallback";
+}
+
+export function useWorkersAIModels() {
+  return useQuery({
+    queryKey: keys.models,
+    queryFn: () => api<{ models: WorkersAIModel[]; source: "cloudflare" | "fallback"; warning?: string }>("/ai/models"),
+    staleTime: 10 * 60_000,
+    retry: false,
   });
 }
 

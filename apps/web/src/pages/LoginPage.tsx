@@ -4,9 +4,11 @@ import { Eye, EyeOff, Lock } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { Button } from "../components/ui";
 import { api, ApiError } from "../lib/api";
+import { useT } from "../lib/i18n";
 
 export function LoginPage({ configured }: { configured: boolean }) {
   const qc = useQueryClient();
+  const t = useT();
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function LoginPage({ configured }: { configured: boolean }) {
       if (err instanceof ApiError && err.code === "RATE_LIMITED") {
         const seconds = (err.details as { retry_after?: number } | undefined)?.retry_after ?? 60;
         setRetryAt(Date.now() + seconds * 1000);
-        setError("Too many attempts. For your security, sign-in is paused.");
+        setError(t("Too many attempts. For your security, sign-in is paused."));
       } else {
         setError(err instanceof Error ? err.message : "Could not sign in.");
       }
@@ -52,7 +54,7 @@ export function LoginPage({ configured }: { configured: boolean }) {
         <div className="mb-10 flex flex-col items-center text-center">
           <Logo className="h-12 w-12" />
           <h1 className="mt-5 text-2xl font-semibold tracking-tight">Talorys</h1>
-          <p className="mt-1.5 text-sm text-fg-muted">Your personal AI agent. Your own cloud.</p>
+          <p className="mt-1.5 text-sm text-fg-muted">{t("Your personal AI agent. Your own cloud.")}</p>
         </div>
 
         {!configured ? (
@@ -73,7 +75,7 @@ export function LoginPage({ configured }: { configured: boolean }) {
                 type={show ? "text" : "password"}
                 autoComplete="current-password"
                 autoFocus
-                placeholder="Owner password"
+                placeholder={t("Owner password")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 aria-invalid={!!error}
@@ -84,13 +86,13 @@ export function LoginPage({ configured }: { configured: boolean }) {
                 type="button"
                 onClick={() => setShow((s) => !s)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-fg-subtle hover:text-fg"
-                aria-label={show ? "Hide password" : "Show password"}
+                aria-label={t(show ? "Hide password" : "Show password")}
               >
                 {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
             <Button type="submit" className="h-12 w-full justify-center rounded-xl text-[15px]" loading={pending} disabled={!password || waitSeconds > 0}>
-              {waitSeconds > 0 ? `Try again in ${waitSeconds}s` : "Unlock"}
+              {waitSeconds > 0 ? t("Try again in").replace("{seconds}", String(waitSeconds)) : t("Unlock")}
             </Button>
             {error && (
               <p id="login-error" role="alert" className="text-center text-sm text-danger">

@@ -4,10 +4,12 @@ import { Markdown } from "./Markdown";
 import { keys, useApiMutation, useNotifications } from "../hooks/queries";
 import { api } from "../lib/api";
 import { cn, relativeTime } from "../lib/utils";
+import { useT } from "../lib/i18n";
 
 /** In-app notification center for reminders and automation results. */
 export function NotificationCenter({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data, isLoading } = useNotifications();
+  const t = useT();
   const markRead = useApiMutation((id?: string) => api("/notifications/read", { method: "POST", body: id ? { id } : {} }), {
     invalidate: [keys.notifications],
   });
@@ -17,12 +19,12 @@ export function NotificationCenter({ open, onClose }: { open: boolean; onClose: 
     <Dialog
       open={open}
       onClose={onClose}
-      title="Notifications"
+      title={t("Notifications")}
       wide
       footer={
         (data?.unread ?? 0) > 0 ? (
           <Button variant="outline" size="sm" onClick={() => markRead.mutate(undefined)} loading={markRead.isPending}>
-            Mark all as read
+            {t("Mark all as read")}
           </Button>
         ) : undefined
       }
@@ -32,8 +34,8 @@ export function NotificationCenter({ open, onClose }: { open: boolean; onClose: 
           <Spinner />
         </div>
       ) : !data?.notifications.length ? (
-        <EmptyState icon={<BellOff className="h-8 w-8" />} title="No notifications">
-          Reminders and automation results will appear here.
+        <EmptyState icon={<BellOff className="h-8 w-8" />} title={t("No notifications")}>
+          {t("Reminders and automation results will appear here.")}
         </EmptyState>
       ) : (
         <ul className="-mx-2 divide-y divide-border">

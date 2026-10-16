@@ -7,6 +7,7 @@ import { schemaVersion } from "../../db/migrations";
 import { exportData, importData } from "../../services/backup";
 import { WORKERS_AI_PRICING } from "../../ai/pricing";
 import { checkForUpdate } from "../../services/update-check";
+import { discoverWorkersAIModels } from "../../ai/models";
 
 export const systemRoutes = new Hono<AppEnv>();
 
@@ -42,6 +43,8 @@ systemRoutes.get("/health", (c) => {
 });
 
 systemRoutes.get("/settings", (c) => c.json({ settings: c.env.agent.services.settings.get() }));
+
+systemRoutes.get("/ai/models", async (c) => c.json(await discoverWorkersAIModels(c.env.env)));
 
 systemRoutes.patch("/settings", async (c) => {
   const patch = await body(c, settingsUpdateSchema);

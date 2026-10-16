@@ -29,4 +29,8 @@ export interface Env {
   /** Informational, written by the installer. */
   TALORYS_INSTALLATION_ID?: string;
   TALORYS_DEPLOYED_VERSION?: string;
+  /** Public account id used for model discovery; safe to expose in generated config. */
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  /** Optional API token with Workers AI Read permission, stored as a Worker secret. */
+  CLOUDFLARE_API_TOKEN?: string;
 }

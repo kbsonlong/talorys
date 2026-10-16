@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router";
 import "./styles/index.css";
 import { initTheme } from "./lib/theme";
 import { App } from "./App";
+import { I18nProvider } from "./lib/i18n";
 import { SessionProvider } from "./hooks/session";
 import { ToastProvider } from "./hooks/toast";
 import { ApiError } from "./lib/api";
@@ -25,11 +26,13 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ToastProvider>
-          <SessionProvider>
-            <App />
-          </SessionProvider>
-        </ToastProvider>
+        <I18nProvider>
+          <ToastProvider>
+            <SessionProvider>
+              <App />
+            </SessionProvider>
+          </ToastProvider>
+        </I18nProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,

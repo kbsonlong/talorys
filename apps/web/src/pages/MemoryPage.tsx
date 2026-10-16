@@ -6,6 +6,7 @@ import { type MemoryStatusFilter, useApiMutation, useMemories, useMemoryHistory,
 import { useToast } from "../hooks/toast";
 import { api } from "../lib/api";
 import { cn, relativeTime } from "../lib/utils";
+import { useT } from "../lib/i18n";
 
 const CATEGORY_LABELS: Record<MemoryCategory, string> = {
   preference: "Preferences",
@@ -55,6 +56,7 @@ export default function MemoryPage() {
   const [correcting, setCorrecting] = useState<Memory | null>(null);
   const [historyOf, setHistoryOf] = useState<Memory | null>(null);
   const [deleting, setDeleting] = useState<Memory | null>(null);
+  const t = useT();
 
   const grouped = useMemo(() => {
     const map = new Map<MemoryCategory, Memory[]>();
@@ -85,21 +87,20 @@ export default function MemoryPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-8">
       <PageHeader
-        title="Memory"
+        title={t("Memory")}
         description={
           <>
-            What Talorys knows about you. Only the most relevant current memories are shared with the AI in each conversation; past facts are used only
-            when you ask about the past.
+            {t("What Talorys knows about you. Only the most relevant current memories are shared with the AI in each conversation; past facts are used only when you ask about the past.")}
             {data ? ` ${data.total} saved.` : ""}
           </>
         }
         actions={
           <Button onClick={() => setEditing("new")}>
-            <Plus className="h-4 w-4" /> Add memory
+            <Plus className="h-4 w-4" /> {t("Add memory")}
           </Button>
         }
       />
-      <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg bg-muted p-1" role="tablist" aria-label="Memory status">
+      <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg bg-muted p-1" role="tablist" aria-label={t("Memory status")}>
         {FILTERS.map((f) => {
           const count = f.value === "active" ? counts?.active : f.value === "historical" ? counts?.historical : f.value === "review" ? counts?.review : undefined;
           return (
@@ -114,7 +115,7 @@ export default function MemoryPage() {
                 filter === f.value ? "bg-surface shadow-sm" : "text-fg-muted hover:text-fg",
               )}
             >
-              {f.label}
+              {t(f.label)}
               {count ? <span className="ml-1 text-fg-subtle">{count}</span> : null}
             </button>
           );
@@ -122,7 +123,7 @@ export default function MemoryPage() {
       </div>
       <div className="relative mb-6">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search memories" className="pl-9" aria-label="Search memories" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Search memories")} className="pl-9" aria-label={t("Search memories")} />
       </div>
 
       {(filter === "review" || filter === "all") && reviewList.length > 0 && <ReviewPanel reviews={reviewList} />}
@@ -137,8 +138,8 @@ export default function MemoryPage() {
         filter === "review" && reviewList.length > 0 ? null : (
           <EmptyState
             icon={<Brain className="h-9 w-9" />}
-            title={debounced ? "No matching memories" : filter === "all" ? "Nothing remembered yet" : "Nothing here"}
-            action={!debounced && filter === "all" && <Button variant="outline" onClick={() => setEditing("new")}>Add your first memory</Button>}
+            title={t(debounced ? "No matching memories" : filter === "all" ? "Nothing remembered yet" : "Nothing here")}
+            action={!debounced && filter === "all" && <Button variant="outline" onClick={() => setEditing("new")}>{t("Add your first memory")}</Button>}
           >
             {debounced
               ? "Try a different search."

@@ -9,10 +9,12 @@ import { Badge, Button, ConfirmDialog, Dialog, EmptyState, ErrorNotice, Input, S
 import { keys, useApiMutation, useNotes, useProjects } from "../hooks/queries";
 import { api } from "../lib/api";
 import { cn, relativeTime } from "../lib/utils";
+import { useT } from "../lib/i18n";
 
 export default function NotesPage() {
   const { noteId } = useParams();
   const navigate = useNavigate();
+  const t = useT();
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
   const [projectsOpen, setProjectsOpen] = useState(false);
@@ -32,19 +34,19 @@ export default function NotesPage() {
       <aside className={cn("w-full shrink-0 flex-col border-r border-border md:flex md:w-80", noteId ? "hidden" : "flex")}>
         <div className="space-y-3 p-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold tracking-tight">Notes</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{t("Notes")}</h1>
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon" onClick={() => setProjectsOpen(true)} aria-label="Manage projects">
+              <Button variant="ghost" size="icon" onClick={() => setProjectsOpen(true)} aria-label={t("Manage projects")}>
                 <FolderKanban className="h-4 w-4" />
               </Button>
-              <Button size="icon" onClick={() => create.mutate(undefined)} loading={create.isPending} aria-label="New note">
+              <Button size="icon" onClick={() => create.mutate(undefined)} loading={create.isPending} aria-label={t("New note")}>
                 {!create.isPending && <Plus className="h-4 w-4" />}
               </Button>
             </div>
           </div>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search notes" className="h-9 pl-9 text-sm" aria-label="Search notes" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Search notes")} className="h-9 pl-9 text-sm" aria-label={t("Search notes")} />
           </div>
         </div>
         <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-2 pb-4">
@@ -57,8 +59,8 @@ export default function NotesPage() {
               <Spinner />
             </div>
           ) : !notes?.length ? (
-            <EmptyState icon={<NotebookPen className="h-8 w-8" />} title={debounced ? "No matches" : "No notes yet"}>
-              {debounced ? "Try another search." : "Capture ideas, plans and reference material. Markdown supported."}
+            <EmptyState icon={<NotebookPen className="h-8 w-8" />} title={t(debounced ? "No matches" : "No notes yet")}>
+              {t(debounced ? "Try another search." : "Capture ideas, plans and reference material. Markdown supported.")}
             </EmptyState>
           ) : (
             <ul className="space-y-0.5">
@@ -99,8 +101,8 @@ export default function NotesPage() {
         {noteId ? (
           <NoteEditor key={noteId} id={noteId} onBack={() => navigate("/notes")} />
         ) : (
-          <EmptyState icon={<NotebookPen className="h-9 w-9" />} title="Select a note">
-            Or create a new one with the + button.
+          <EmptyState icon={<NotebookPen className="h-9 w-9" />} title={t("Select a note")}>
+            {t("Or create a new one with the + button.")}
           </EmptyState>
         )}
       </section>

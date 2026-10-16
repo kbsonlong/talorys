@@ -27,6 +27,7 @@ import { Logo } from "../components/Logo";
 import { keys, useApiMutation, useConversation, useConversations, useSettings } from "../hooks/queries";
 import { api, ApiError, streamChat } from "../lib/api";
 import { cn, copyText, relativeTime } from "../lib/utils";
+import { useT } from "../lib/i18n";
 
 interface StreamState {
   conversationId: string | null;
@@ -51,6 +52,7 @@ export function ChatPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const settings = useSettings();
+  const t = useT();
   const conversation = useConversation(conversationId);
   const [stream, setStream] = useState<StreamState | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -190,7 +192,7 @@ export function ChatPage() {
               <Spinner />
             </div>
           ) : conversation.isError && !streamHere ? (
-            <div className="p-8 text-center text-sm text-fg-muted">This conversation could not be loaded.</div>
+            <div className="p-8 text-center text-sm text-fg-muted">{t("This conversation could not be loaded.")}</div>
           ) : (
             <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 md:px-6">
               {messages.map((m) =>
@@ -225,7 +227,7 @@ export function ChatPage() {
         <Composer streaming={streaming || remoteStreaming} onSend={(t) => void send(t)} onStop={stop} autoFocus={showEmpty} />
       </section>
 
-      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} title="Conversations">
+      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} title={t("Conversations")}>
         <div className="-mx-5 -my-4 h-[60vh]">
           <ConversationList activeId={conversationId} onNavigate={() => setHistoryOpen(false)} />
         </div>
@@ -243,6 +245,7 @@ function ChatHeader({
   onOpenHistory: () => void;
   onNew: () => void;
 }) {
+  const t = useT();
   return (
     <div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3 md:px-4">
       <div className="flex min-w-0 items-center gap-1">
@@ -263,11 +266,12 @@ function ChatHeader({
 }
 
 function EmptyChat({ name, onPick }: { name: string; onPick: (s: string) => void }) {
+  const t = useT();
   const recent = useConversations();
   const navigate = useNavigate();
   const greeting = (() => {
     const h = new Date().getHours();
-    return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+    return h < 12 ? t("Good morning") : h < 18 ? t("Good afternoon") : t("Good evening");
   })();
   return (
     <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col justify-center px-5 py-10 animate-fade-in">
@@ -276,7 +280,7 @@ function EmptyChat({ name, onPick }: { name: string; onPick: (s: string) => void
         <span className="text-sm font-medium">{name}</span>
       </div>
       <h1 className="mt-6 text-3xl font-semibold tracking-tight text-fg md:text-4xl">{greeting}.</h1>
-      <p className="mt-2 text-lg text-fg-muted">What would you like to do today?</p>
+      <p className="mt-2 text-lg text-fg-muted">{t("What would you like to do today?")}</p>
       <div className="mt-8 grid gap-2 sm:grid-cols-2">
         {SUGGESTIONS.map((s) => (
           <button type="button"
@@ -284,13 +288,13 @@ function EmptyChat({ name, onPick }: { name: string; onPick: (s: string) => void
             onClick={() => onPick(s)}
             className="rounded-xl border border-border bg-surface px-4 py-3 text-left text-sm text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
           >
-            {s}
+            {t(s)}
           </button>
         ))}
       </div>
       {!!recent.data?.length && (
         <div className="mt-10">
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-subtle">Recent conversations</h3>
+          <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-fg-subtle">{t("Recent conversations")}</h3>
           <ul className="space-y-0.5">
             {recent.data.slice(0, 4).map((c) => (
               <li key={c.id}>
@@ -318,6 +322,7 @@ function ConversationList({ activeId, onNavigate }: { activeId?: string; onNavig
     return () => clearTimeout(t);
   }, [q]);
   const list = useConversations(debounced || undefined);
+  const t = useT();
   const navigate = useNavigate();
   const [renaming, setRenaming] = useState<Conversation | null>(null);
   const [deleting, setDeleting] = useState<Conversation | null>(null);
@@ -348,11 +353,11 @@ function ConversationList({ activeId, onNavigate }: { activeId?: string; onNavig
             onNavigate();
           }}
         >
-          <Plus className="h-4 w-4" /> New conversation
+          <Plus className="h-4 w-4" /> {t("New conversation")}
         </Button>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search history" className="h-9 pl-9 text-sm" aria-label="Search conversations" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("Search history")} className="h-9 pl-9 text-sm" aria-label={t("Search conversations")} />
         </div>
       </div>
       <nav className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-2 pb-3" aria-label="Conversations">
@@ -361,7 +366,7 @@ function ConversationList({ activeId, onNavigate }: { activeId?: string; onNavig
             <Spinner />
           </div>
         ) : !list.data?.length ? (
-          <p className="px-3 py-6 text-center text-sm text-fg-subtle">{debounced ? "No matches." : "No conversations yet."}</p>
+          <p className="px-3 py-6 text-center text-sm text-fg-subtle">{debounced ? t("No matches.") : t("No conversations yet.")}</p>
         ) : (
           <ul className="space-y-0.5">
             {list.data.map((c) => (
@@ -422,7 +427,7 @@ function ConversationList({ activeId, onNavigate }: { activeId?: string; onNavig
         footer={
           <>
             <Button variant="ghost" onClick={() => setRenaming(null)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               onClick={() => renaming && title.trim() && rename.mutate({ id: renaming.id, title: title.trim() })}

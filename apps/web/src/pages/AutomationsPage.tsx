@@ -5,6 +5,7 @@ import { Badge, Button, Card, ConfirmDialog, Dialog, EmptyState, ErrorNotice, In
 import { keys, useApiMutation, useAutomations } from "../hooks/queries";
 import { api } from "../lib/api";
 import { cn, formatDateTime, relativeTime } from "../lib/utils";
+import { useT } from "../lib/i18n";
 
 const KIND_META: Record<AutomationKind, { label: string; icon: typeof Bell; hint: string }> = {
   reminder: { label: "Reminder", icon: Bell, hint: "Shows your message in the notification center. No AI used." },
@@ -15,7 +16,8 @@ const KIND_META: Record<AutomationKind, { label: string; icon: typeof Bell; hint
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function AutomationsPage() {
-  const { data, isLoading, error, refetch } = useAutomations();
+  const { data: data, isLoading, error, refetch } = useAutomations();
+  const t = useT();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Automation | null>(null);
   const [deleting, setDeleting] = useState<Automation | null>(null);
@@ -83,9 +85,7 @@ export default function AutomationsPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-8">
-      <PageHeader
-        title="Automations"
-        description={<>Reminders and routines run inside your Cloudflare account, even when this page is closed. Times use {tz}.</>}
+      <PageHeader title={t("Automations")} description={t("Reminders and routines run inside your Cloudflare account, even when this page is closed. Times use {tz}.").replace("{tz}", tz)}
         actions={
           <Button onClick={() => setCreating(true)}>
             <Plus className="h-4 w-4" /> New

@@ -5,6 +5,7 @@ import { Badge, Button, ConfirmDialog, Dialog, EmptyState, ErrorNotice, Input, L
 import { keys, useApiMutation, useProjects, useTasks, useTimezone } from "../hooks/queries";
 import { api } from "../lib/api";
 import { cn, formatDue, toLocalInput } from "../lib/utils";
+import { useT } from "../lib/i18n";
 
 type Tab = "today" | "upcoming" | "completed";
 
@@ -37,6 +38,7 @@ export default function TasksPage() {
   const tz = useTimezone();
   const { data: tasks, isLoading, error, refetch } = useTasks();
   const projects = useProjects();
+  const t = useT();
   const [tab, setTab] = useState<Tab>("today");
   const [editing, setEditing] = useState<Task | null>(null);
   const [quick, setQuick] = useState("");
@@ -72,22 +74,22 @@ export default function TasksPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-8">
-      <PageHeader title="Tasks" description="Works with or without AI. Talorys can also manage these from chat." />
+      <PageHeader title={t("Tasks")} description={t("Works with or without AI. Talorys can also manage these from chat.")} />
 
       <div role="tablist" className="mb-5 flex gap-1 rounded-lg bg-muted p-1">
-        {(["today", "upcoming", "completed"] as Tab[]).map((t) => (
+        {(["today", "upcoming", "completed"] as Tab[]).map((tabName) => (
           <button type="button"
-            key={t}
+            key={tabName}
             role="tab"
-            aria-selected={tab === t}
-            onClick={() => setTab(t)}
+            aria-selected={tab === tabName}
+            onClick={() => setTab(tabName)}
             className={cn(
               "flex-1 rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors",
-              tab === t ? "bg-surface text-fg shadow-sm" : "text-fg-muted hover:text-fg",
+              tab === tabName ? "bg-surface text-fg shadow-sm" : "text-fg-muted hover:text-fg",
             )}
           >
-            {t}
-            <span className="ml-1.5 text-xs text-fg-subtle">{sections[t].length}</span>
+            {t(tabName)}
+            <span className="ml-1.5 text-xs text-fg-subtle">{sections[tabName].length}</span>
           </button>
         ))}
       </div>
@@ -97,13 +99,13 @@ export default function TasksPage() {
           <Input
             value={quick}
             onChange={(e) => setQuick(e.target.value)}
-            placeholder={tab === "today" ? "Add a task for today" : "Add a task"}
+            placeholder={t(tab === "today" ? "Add a task for today" : "Add a task")}
             maxLength={300}
-            aria-label="New task title"
+            aria-label={t("New task title")}
           />
           <Button type="submit" loading={create.isPending} disabled={!quick.trim()} aria-label="Add task">
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Add</span>
+            <span className="hidden sm:inline">{t("Add")}</span>
           </Button>
         </form>
       )}
@@ -115,46 +117,46 @@ export default function TasksPage() {
           <Spinner />
         </div>
       ) : list.length === 0 ? (
-        <EmptyState icon={<CheckCircle2 className="h-9 w-9" />} title={tab === "completed" ? "Nothing completed yet" : "All clear"}>
-          {tab === "today" ? "Nothing due today. Enjoy the calm, or plan ahead." : tab === "upcoming" ? "No upcoming tasks." : "Completed tasks will appear here."}
+        <EmptyState icon={<CheckCircle2 className="h-9 w-9" />} title={t(tab === "completed" ? "Nothing completed yet" : "All clear")}>
+          {t(tab === "today" ? "Nothing due today. Enjoy the calm, or plan ahead." : tab === "upcoming" ? "No upcoming tasks." : "Completed tasks will appear here.")}
         </EmptyState>
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
-          {list.map((t) => {
-            const overdue = t.status !== "done" && t.due_at && t.due_at < nowIso;
+          {list.map((task) => {
+            const overdue = task.status !== "done" && task.due_at && task.due_at < nowIso;
             return (
-              <li key={t.id} className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-subtle">
+              <li key={task.id} className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-subtle">
                 <button type="button"
-                  onClick={() => toggle.mutate(t)}
+                  onClick={() => toggle.mutate(task)}
                   className="mt-0.5 text-fg-subtle transition-colors hover:text-accent"
-                  aria-label={t.status === "done" ? `Mark “${t.title}” as not done` : `Complete “${t.title}”`}
+                  aria-label={task.status === "done" ? `Mark “${task.title}” as not done` : `Complete “${task.title}”`}
                 >
-                  {t.status === "done" ? (
+                  {task.status === "done" ? (
                     <CheckCircle2 className="h-5 w-5 text-accent" />
-                  ) : t.status === "in_progress" ? (
+                  ) : task.status === "in_progress" ? (
                     <CircleDot className="h-5 w-5" />
                   ) : (
                     <Circle className="h-5 w-5" />
                   )}
                 </button>
-                <button type="button" onClick={() => setEditing(t)} className="min-w-0 flex-1 text-left">
-                  <p className={cn("text-[15px] leading-6", t.status === "done" && "text-fg-subtle line-through")}>{t.title}</p>
+                <button type="button" onClick={() => setEditing(task)} className="min-w-0 flex-1 text-left">
+                  <p className={cn("text-[15px] leading-6", task.status === "done" && "text-fg-subtle line-through")}>{task.title}</p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-subtle">
-                    {t.due_at && (
+                    {task.due_at && (
                       <span className={cn("inline-flex items-center gap-1", overdue && "font-medium text-danger")}>
                         <CalendarDays className="h-3 w-3" />
-                        {overdue ? "Overdue · " : ""}
-                        {formatDue(t.due_at, tz)}
+                        {overdue ? t("Overdue · ") : ""}
+                        {formatDue(task.due_at, tz)}
                       </span>
                     )}
-                    {projectName(t.project_id) && <span>{projectName(t.project_id)}</span>}
-                    {t.description && <span className="max-w-[16rem] truncate">{t.description}</span>}
+                    {projectName(task.project_id) && <span>{projectName(task.project_id)}</span>}
+                    {task.description && <span className="max-w-[16rem] truncate">{task.description}</span>}
                   </div>
                 </button>
-                {(t.priority === "high" || t.priority === "urgent") && t.status !== "done" && (
-                  <Badge tone={PRIORITY_TONE[t.priority]} className="mt-0.5 capitalize">
+                {(task.priority === "high" || task.priority === "urgent") && task.status !== "done" && (
+                  <Badge tone={PRIORITY_TONE[task.priority]} className="mt-0.5 capitalize">
                     <Flag className="mr-1 h-3 w-3" />
-                    {t.priority}
+                    {t(task.priority)}
                   </Badge>
                 )}
               </li>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { Bell, Brain, CalendarClock, CheckSquare, LogOut, MessageSquare, NotebookPen, Settings } from "lucide-react";
 import { Logo } from "./Logo";
@@ -7,6 +7,7 @@ import { useKeyboardOpenFlag } from "../hooks/keyboard";
 import { useSession } from "../hooks/session";
 import { useNotifications, useSettings } from "../hooks/queries";
 import { cn } from "../lib/utils";
+import { useI18n, useT } from "../lib/i18n";
 
 const NAV = [
   { to: "/chat", label: "Chat", icon: MessageSquare },
@@ -20,11 +21,16 @@ export function AppShell() {
   const { logout } = useSession();
   const settings = useSettings();
   const notifications = useNotifications();
+  const { setPreference } = useI18n();
+  const t = useT();
   const [notifOpen, setNotifOpen] = useState(false);
   useKeyboardOpenFlag();
   const location = useLocation();
   const unread = notifications.data?.unread ?? 0;
   const agentName = settings.data?.agentName ?? "Talorys";
+  useEffect(() => {
+    if (settings.data?.language) setPreference(settings.data.language);
+  }, [settings.data?.language, setPreference]);
   const isChat = location.pathname.startsWith("/chat");
 
   const bell = (
@@ -66,7 +72,7 @@ export function AppShell() {
               }
             >
               <Icon className="h-4 w-4" />
-              {label}
+              {t(label)}
             </NavLink>
           ))}
         </nav>
@@ -81,14 +87,14 @@ export function AppShell() {
             }
           >
             <Settings className="h-4 w-4" />
-            Settings
+            {t("Settings")}
           </NavLink>
           <button type="button"
             onClick={() => void logout()}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-muted hover:text-fg"
           >
             <LogOut className="h-4 w-4" />
-            Lock
+            {t("Lock")}
           </button>
         </div>
       </aside>
@@ -114,7 +120,7 @@ export function AppShell() {
 
         {/* Mobile bottom navigation */}
         <nav
-          aria-label="Main"
+          aria-label={t("Main navigation")}
           className="mobile-nav fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
         >
           {NAV.map(({ to, label, icon: Icon }) => (
@@ -126,7 +132,7 @@ export function AppShell() {
               }
             >
               <Icon className="h-5 w-5" />
-              {label === "Automations" ? "Schedules" : label}
+              {label === "Automations" ? t("Schedules") : t(label)}
             </NavLink>
           ))}
         </nav>
